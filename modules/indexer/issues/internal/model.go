@@ -8,6 +8,7 @@ import (
 
 	"code.gitea.io/gitea/models/db"
 	"code.gitea.io/gitea/modules/indexer"
+	"code.gitea.io/gitea/modules/json"
 	"code.gitea.io/gitea/modules/optional"
 	"code.gitea.io/gitea/modules/timeutil"
 )
@@ -30,7 +31,7 @@ type IndexerData struct {
 	LabelIDs           []int64            `json:"label_ids"`
 	NoLabel            bool               `json:"no_label"` // True if LabelIDs is empty
 	MilestoneID        int64              `json:"milestone_id"`
-	ProjectIDs         []int64            `json:"project_id"`
+	ProjectIDs         []int64            `json:"project_ids"`
 	ProjectColumnID    int64              `json:"project_board_id"` // the key should be kept as project_board_id to keep compatible
 	PosterID           int64              `json:"poster_id"`
 	AssigneeID         int64              `json:"assignee_id"`
@@ -52,6 +53,25 @@ type IndexerData struct {
 type Match struct {
 	ID    int64   `json:"id"`
 	Score float64 `json:"score"`
+}
+
+// UnmarshalJSON implements custom unmarshaling for IndexerData to keep backward
+// compatibility with older index documents that used `project_id` (singular).
+func (d *IndexerData) UnmarshalJSON(b []byte) error {
+	type Alias IndexerData
+	aux := &struct {
+		*Alias
+		ProjectID *int64 `json:"project_id"`
+	}{
+		Alias: (*Alias)(d),
+	}
+	if err := json.Unmarshal(b, &aux); err != nil {
+		return err
+	}
+	if aux.ProjectID != nil && len(d.ProjectIDs) == 0 {
+		d.ProjectIDs = []int64{*aux.ProjectID}
+	}
+	return nil
 }
 
 // SearchResult represents search results
