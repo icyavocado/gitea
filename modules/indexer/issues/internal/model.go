@@ -9,6 +9,7 @@ import (
 	"code.gitea.io/gitea/models/db"
 	"code.gitea.io/gitea/modules/indexer"
 	"code.gitea.io/gitea/modules/json"
+	"code.gitea.io/gitea/modules/log"
 	"code.gitea.io/gitea/modules/optional"
 	"code.gitea.io/gitea/modules/timeutil"
 )
@@ -68,8 +69,22 @@ func (d *IndexerData) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &aux); err != nil {
 		return err
 	}
-	if aux.ProjectID != nil && len(d.ProjectIDs) == 0 {
-		d.ProjectIDs = []int64{*aux.ProjectID}
+	if aux.ProjectID != nil {
+		if len(d.ProjectIDs) == 0 {
+			d.ProjectIDs = []int64{*aux.ProjectID}
+		} else {
+			// Check if old and new project IDs conflict
+			found := false
+			for _, id := range d.ProjectIDs {
+				if id == *aux.ProjectID {
+					found = true
+					break
+				}
+			}
+			if !found {
+				d.ProjectIDs = append([]int64{*aux.ProjectID}, d.ProjectIDs...)
+			}
+		}
 	}
 	return nil
 }
