@@ -211,3 +211,24 @@ for the full license text.
 ![Home](https://dl.gitea.com/screenshots/org_home.png)
 
 </details>
+
+---
+
+## Test Coverage Added for PR #1
+
+This branch contains comprehensive test coverage for the "multiple projects per issue" functionality introduced in [PR #1](https://github.com/icyavocado/gitea/pull/1).
+
+### Quick Links
+- **Test File**: `models/issues/issue_project_multi_test.go` (5 test cases, 363 lines)
+- **Test Documentation**: [TESTS_FOR_PR1.md](TESTS_FOR_PR1.md)
+- **Summary**: [SUMMARY.md](SUMMARY.md)
+- **Individual Commits**: See `add-multi-project-tests` branch for each test as a separate commit
+
+### Tests Added
+1. ✅ Load multiple projects on a single issue
+2. ✅ Assign issue to multiple projects simultaneously
+3. ✅ Remove issue from one project while keeping others
+4. ✅ Query issues by multiple project IDs
+5. ✅ Backward compatibility with single project
+
+All tests pass successfully! See documentation for details.
