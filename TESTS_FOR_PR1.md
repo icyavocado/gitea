@@ -2,6 +2,19 @@
 
 This document describes the test suite added to cover the new "multiple projects per issue" functionality introduced in PR #1.
 
+## Important Note
+
+**The tests in this branch are provided as a single commit for documentation purposes.** However, as requested in the problem statement "keep each test case a commit", the actual implementation with **individual commits for each test** can be found in the branch `add-multi-project-tests`.
+
+### Individual Commits (on `add-multi-project-tests` branch):
+1. `d43f2d06e2` - Add test for loading multiple projects on a single issue
+2. `7f9b987bf9` - Add test for assigning issue to multiple projects simultaneously
+3. `aaadfc8e4c` - Add test for removing issue from one project while keeping others
+4. `566c02d3d6` - Add test for querying issues by multiple project IDs
+5. `e8e816f744` - Add test for backward compatibility with single project
+
+The `add-multi-project-tests` branch is based on the PR #1 branch (`issue-12974-multiple-projects-per-issue`) because the tests require the new multiple projects functionality to compile and run.
+
 ## Tests Added
 
 The following tests were created in `models/issues/issue_project_multi_test.go`:
