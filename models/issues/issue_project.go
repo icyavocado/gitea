@@ -29,12 +29,12 @@ func (issue *Issue) projectIDs(ctx context.Context) ([]int64, error) {
 	}
 
 	if len(pis) == 0 {
-		return []int64{}, nil
+		return nil, nil
 	}
 
-	ids := make([]int64, 0, len(pis))
-	for _, pi := range pis {
-		ids = append(ids, pi.ProjectID)
+	ids := make([]int64, len(pis))
+	for i, pi := range pis {
+		ids[i] = pi.ProjectID
 	}
 	return ids, nil
 }
@@ -45,7 +45,8 @@ func (issue *Issue) ProjectColumnID(ctx context.Context) (int64, error) {
 	has, err := db.GetEngine(ctx).Where("issue_id=?", issue.ID).Get(&ip)
 	if err != nil {
 		return 0, err
-	} else if !has {
+	}
+	if !has {
 		return 0, nil
 	}
 	return ip.ProjectColumnID, nil
@@ -109,14 +110,13 @@ func IssueAssignOrRemoveProject(ctx context.Context, issue *Issue, doer *user_mo
 			return err
 		}
 
-		projectDB := db.GetEngine(ctx).Where("project_issue.issue_id=?", issue.ID)
-		newProjectIDs, oldProjectIDs := util.DiffSlice(oldProjectIDs, newProjectIDs)
+		toAddProjectIDs, toRemoveProjectIDs := util.DiffSlice(oldProjectIDs, newProjectIDs)
 
-		if len(oldProjectIDs) > 0 {
-			if _, err := projectDB.Where("issue_id=?", issue.ID).In("project_id", oldProjectIDs).Delete(&project_model.ProjectIssue{}); err != nil {
+		if len(toRemoveProjectIDs) > 0 {
+			if _, err := db.GetEngine(ctx).Where("issue_id=?", issue.ID).In("project_id", toRemoveProjectIDs).Delete(&project_model.ProjectIssue{}); err != nil {
 				return err
 			}
-			for _, projectID := range oldProjectIDs {
+			for _, projectID := range toRemoveProjectIDs {
 				if _, err := CreateComment(ctx, &CreateCommentOptions{
 					Type:         CommentTypeProject,
 					Doer:         doer,
@@ -130,7 +130,7 @@ func IssueAssignOrRemoveProject(ctx context.Context, issue *Issue, doer *user_mo
 			}
 		}
 
-		if len(newProjectIDs) == 0 {
+		if len(toAddProjectIDs) == 0 {
 			return nil
 		}
 
@@ -138,17 +138,17 @@ func IssueAssignOrRemoveProject(ctx context.Context, issue *Issue, doer *user_mo
 			MaxSorting int64
 			IssueCount int64
 		}{}
-		if _, err := projectDB.Select("max(sorting) as max_sorting, count(*) as issue_count").Table("project_issue").
-			In("project_id", newProjectIDs).
+		if _, err := db.GetEngine(ctx).Select("max(sorting) as max_sorting, count(*) as issue_count").Table("project_issue").
+			In("project_id", toAddProjectIDs).
 			And("project_board_id=?", newColumnID).
 			Get(&res); err != nil {
 			return err
 		}
 		newSorting := util.Iif(res.IssueCount > 0, res.MaxSorting+1, 0)
 
-		pi := make([]*project_model.ProjectIssue, 0, len(newProjectIDs))
+		pi := make([]*project_model.ProjectIssue, 0, len(toAddProjectIDs))
 
-		for _, projectID := range newProjectIDs {
+		for _, projectID := range toAddProjectIDs {
 			if projectID == 0 {
 				continue
 			}
