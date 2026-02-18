@@ -8,7 +8,6 @@ import (
 
 	"code.gitea.io/gitea/models/db"
 	"code.gitea.io/gitea/modules/indexer"
-	"code.gitea.io/gitea/modules/json"
 	"code.gitea.io/gitea/modules/optional"
 	"code.gitea.io/gitea/modules/timeutil"
 )
@@ -53,39 +52,6 @@ type IndexerData struct {
 type Match struct {
 	ID    int64   `json:"id"`
 	Score float64 `json:"score"`
-}
-
-// UnmarshalJSON implements custom unmarshaling for IndexerData to keep backward
-// compatibility with older index documents that used `project_id` (singular).
-func (d *IndexerData) UnmarshalJSON(b []byte) error {
-	type Alias IndexerData
-	aux := &struct {
-		*Alias
-		ProjectID *int64 `json:"project_id"`
-	}{
-		Alias: (*Alias)(d),
-	}
-	if err := json.Unmarshal(b, &aux); err != nil {
-		return err
-	}
-	if aux.ProjectID != nil {
-		if len(d.ProjectIDs) == 0 {
-			d.ProjectIDs = []int64{*aux.ProjectID}
-		} else {
-			// Check if old and new project IDs conflict
-			found := false
-			for _, id := range d.ProjectIDs {
-				if id == *aux.ProjectID {
-					found = true
-					break
-				}
-			}
-			if !found {
-				d.ProjectIDs = append([]int64{*aux.ProjectID}, d.ProjectIDs...)
-			}
-		}
-	}
-	return nil
 }
 
 // SearchResult represents search results
