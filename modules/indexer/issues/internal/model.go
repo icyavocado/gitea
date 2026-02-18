@@ -8,6 +8,7 @@ import (
 
 	"code.gitea.io/gitea/models/db"
 	"code.gitea.io/gitea/modules/indexer"
+	"code.gitea.io/gitea/modules/json"
 	"code.gitea.io/gitea/modules/optional"
 	"code.gitea.io/gitea/modules/timeutil"
 )
@@ -46,6 +47,27 @@ type IndexerData struct {
 	CreatedUnix  timeutil.TimeStamp `json:"created_unix"`
 	DeadlineUnix timeutil.TimeStamp `json:"deadline_unix"`
 	CommentCount int64              `json:"comment_count"`
+}
+
+// UnmarshalJSON implements custom unmarshaling for IndexerData to maintain backward
+// compatibility with older index documents that used `project_id` (singular).
+func (d *IndexerData) UnmarshalJSON(b []byte) error {
+	type Alias IndexerData
+	aux := &struct {
+		*Alias
+		ProjectID *int64 `json:"project_id"`
+	}{
+		Alias: (*Alias)(d),
+	}
+	if err := json.Unmarshal(b, &aux); err != nil {
+		return err
+	}
+	// If we have a singular project_id and ProjectIDs is empty, use it
+	if aux.ProjectID != nil && len(d.ProjectIDs) == 0 {
+		d.ProjectIDs = []int64{*aux.ProjectID}
+	}
+	// Otherwise, ProjectIDs (plural) takes precedence
+	return nil
 }
 
 // Match represents on search result
