@@ -166,7 +166,7 @@ func IssueAssignOrRemoveProject(ctx context.Context, issue *Issue, doer *user_mo
 
 			projectColumnID := newColumnID
 			if projectColumnID == 0 {
-				defaultColumn, err := project_model.GetDefaultColumn(ctx)
+				defaultColumn, err := project_model.MustDefaultColumn(ctx)
 				if err != nil {
 					return err
 				}
