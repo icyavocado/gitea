@@ -203,8 +203,8 @@ func applyProjectCondition(sess *xorm.Session, opts *IssuesOptions) {
 	if len(projectIDs) == 1 && projectIDs[0] == db.NoConditionID { // show those that are in no project
 		sess.And(builder.NotIn("issue.id", builder.Select("issue_id").From("project_issue")))
 	} else if len(projectIDs) > 0 { // specific project
-		sess.Join("INNER", "project_issue", "issue.id = project_issue.issue_id").
-			In("project_issue.project_id", projectIDs)
+		sess.And(builder.In("issue.id",
+			builder.Select("issue_id").From("project_issue").Where(builder.In("project_id", projectIDs))))
 	}
 	// empty projectIDs means all projects,
 	// do not need to apply any condition
