@@ -121,8 +121,10 @@ func NewIssue(ctx *context.Context) {
 	}
 
 	pageMetaData.MilestonesData.SelectedMilestoneID = ctx.FormInt64("milestone")
-	pageMetaData.ProjectsData.SelectedProjectID = ctx.FormString("project")
-	if len(pageMetaData.ProjectsData.SelectedProjectID) > 0 {
+	projectStr := ctx.FormString("project")
+	if len(projectStr) > 0 {
+		projectIDs, _ := base.StringsToInt64s(strings.Split(projectStr, ","))
+		pageMetaData.ProjectsData.SelectedProjectIDs = projectIDs
 		if len(ctx.Req.URL.Query().Get("project")) > 0 {
 			ctx.Data["redirect_after_creation"] = "project"
 		}
@@ -271,15 +273,13 @@ func ValidateRepoMetasForNewIssue(ctx *context.Context, form forms.CreateIssueFo
 	allProjects := append(slices.Clone(pageMetaData.ProjectsData.OpenProjects), pageMetaData.ProjectsData.ClosedProjects...)
 	candidateProjects := toSet(allProjects, func(project *project_model.Project) int64 { return project.ID })
 	inputProjectIDs, _ := base.StringsToInt64s(strings.Split(form.ProjectIDs, ","))
-	var selectedProjectIDStrings []string
 	var selectedProjectIDs []int64
 	for _, v := range inputProjectIDs {
 		if candidateProjects.Contains(v) {
-			selectedProjectIDStrings = append(selectedProjectIDStrings, strconv.FormatInt(v, 10))
 			selectedProjectIDs = append(selectedProjectIDs, v)
 		}
 	}
-	pageMetaData.ProjectsData.SelectedProjectID = strings.Join(selectedProjectIDStrings, ",")
+	pageMetaData.ProjectsData.SelectedProjectIDs = selectedProjectIDs
 
 	// prepare assignees
 	candidateAssignees := toSet(pageMetaData.AssigneesData.CandidateAssignees, func(user *user_model.User) int64 { return user.ID })
