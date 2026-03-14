@@ -34,9 +34,9 @@ type issueSidebarAssigneesData struct {
 }
 
 type issueSidebarProjectsData struct {
-	SelectedProjectID int64
-	OpenProjects      []*project_model.Project
-	ClosedProjects    []*project_model.Project
+	SelectedProjectIDs []int64
+	OpenProjects       []*project_model.Project
+	ClosedProjects     []*project_model.Project
 }
 
 type IssuePageMetaData struct {
@@ -159,8 +159,11 @@ func (d *IssuePageMetaData) retrieveAssigneesData(ctx *context.Context) {
 }
 
 func (d *IssuePageMetaData) retrieveProjectsDataForIssueWriter(ctx *context.Context) {
-	if d.Issue != nil && d.Issue.Project != nil {
-		d.ProjectsData.SelectedProjectID = d.Issue.Project.ID
+	if d.Issue != nil && len(d.Issue.Projects) > 0 {
+		d.ProjectsData.SelectedProjectIDs = make([]int64, 0, len(d.Issue.Projects))
+		for _, v := range d.Issue.Projects {
+			d.ProjectsData.SelectedProjectIDs = append(d.ProjectsData.SelectedProjectIDs, v.ID)
+		}
 	}
 	d.ProjectsData.OpenProjects, d.ProjectsData.ClosedProjects = retrieveProjectsInternal(ctx, ctx.Repo.Repository)
 }
