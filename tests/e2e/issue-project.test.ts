@@ -21,10 +21,10 @@ test('assign issue to project and change column', async ({page}) => {
   await page.goto(`/${user}/${repoName}/issues/1`);
   await page.locator('.sidebar-project-combo .ui.dropdown').click();
   await page.locator('.sidebar-project-combo .menu a.item', {hasText: 'Kanban Board'}).click();
-  const columnCombo = page.locator('.sidebar-project-column-combo');
-  await expect(columnCombo).toBeVisible();
+  await page.locator('.sidebar-project-combo .fixed-text').click();
+  const columnCombo = page.locator('.sidebar-project-combo .issue-sidebar-combo').first();
   await columnCombo.locator('.ui.dropdown').click();
   await columnCombo.locator('.menu a.item', {hasText: 'In Progress'}).click();
-  await expect(columnCombo.getByTestId('sidebar-project-column-text')).toHaveText('In Progress');
+  await expect(columnCombo.locator('.ui.mini.compact.dropdown.muted .text')).toHaveText('In Progress');
   await apiDeleteRepo(page.request, user, repoName);
 });
